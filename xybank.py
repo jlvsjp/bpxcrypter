@@ -6,7 +6,7 @@ from Crypto.Cipher import AES
 from bpxcrypter import MyXBurpIPCServer
 
 
-KEY = b"8f4f6bae4cbb4890"
+KEY = b"9c3db5006fdf4bf8"
 
 
 class XYBankHelper(MyXBurpIPCServer):

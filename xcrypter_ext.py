@@ -137,13 +137,20 @@ class MyPanel(JSplitPane):
     def setSignature(self, sign):
         self.signField.setText(sign)
 
+    def unicode_to_str(self, content):
+        data = ""
+        for i in content:
+            data += chr(ord(i))
+        return data
+
 
     def get_real_content(self, content):
         s_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         handled_cnt = None
+        data = self.unicode_to_str(content)
         try:
             s_client.connect(LOCAL_IPC)
-            s_client.send(content)
+            s_client.send(data)
             handled_cnt = ""
 
             while True:
@@ -165,23 +172,24 @@ class MyPanel(JSplitPane):
 
 
     def encrypt(self, event):
-        plain = self.plainTextPane.getText().encode("utf-8")
+        plain = self.plainTextPane.getText()
         # BP_STDERR.println("plain type - %s" % type(plain))
-        result = self.get_real_content("\x01" + plain)
+        result = self.get_real_content(b"\x01" + plain)
         self.setCipher(result)
 
 
-    def decrypt(self, event):
-        cipher = self.cipherTextPane.getText().encode("utf-8")
+    def decrypt(self, event, is_req=None):
+        cipher = self.cipherTextPane.getText()
         # BP_STDERR.println("cipher type - %s" % type(cipher))
-        result = self.get_real_content("\x02" + cipher)
+        flag = b"\x02" if is_req is True else b"\x03" if is_req is False else b"\x00"
+        result = self.get_real_content(flag + cipher)
         self.setPlain(result)
 
 
     def sign(self, event):
-        text = self.plainTextPane.getText().encode("utf-8")
+        text = self.plainTextPane.getText()
         # BP_STDERR.println("sign func called! - %s" % text)
-        result = self.get_real_content("\x03" + text)
+        result = self.get_real_content(b"\x04" + text)
         self.setSignature(result)
 
 
@@ -269,7 +277,7 @@ class MyMenu(IContextMenuFactory):
                 # BP_STDOUT.println("selected request string: %s" % selected_txt[selectedBounds[0]: selectedBounds[1]])
 
                 self.scannerInstance.xpannel.setCipher(selected_txt[selectedBounds[0]: selectedBounds[1]])
-                self.scannerInstance.xpannel.decrypt(event)
+                self.scannerInstance.xpannel.decrypt(event, is_req=True)
 
             elif InvocationContext == 1 or InvocationContext == 3:
                 resp = selectedMessage.getResponse()
@@ -280,4 +288,4 @@ class MyMenu(IContextMenuFactory):
                 # BP_STDOUT.println("selected request string: %s" % selected_txt[selectedBounds[0]: selectedBounds[1]])
 
                 self.scannerInstance.xpannel.setCipher(selected_txt[selectedBounds[0]: selectedBounds[1]])
-                self.scannerInstance.xpannel.decrypt(event)
+                self.scannerInstance.xpannel.decrypt(event, is_req=False)
